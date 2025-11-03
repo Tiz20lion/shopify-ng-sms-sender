@@ -1,6 +1,6 @@
 <div align="center">
 
-# 📱 Shopify Nigeria SMS Sender
+#  Shopify NG SMS Sender
 
 **Automate SMS notifications for your Nigerian Shopify store using Termii API**
 
