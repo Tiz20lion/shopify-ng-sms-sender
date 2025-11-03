@@ -1,0 +1,6 @@
+{
+  "example-shop.myshopify.com": {
+    "order_confirmation": "Hi {{customer_name}}, your order #{{order_number}} has been confirmed. Total: {{total_price}}. Thank you!",
+    "fulfillment": "Hi {{customer_name}}, your order #{{order_number}} has been shipped and will arrive soon!"
+  }
+}

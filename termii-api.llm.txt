@@ -1,0 +1,290 @@
+# Termii Messaging API Documentation
+
+## Overview
+
+The Termii Messaging API enables businesses to send text messages to their customers across various messaging channels. The API accepts JSON-formatted request payloads and returns JSON-encoded responses, using standard HTTP response codes to indicate success or failure.
+
+Base URL: https://BASE_URL (replace BASE_URL with actual Termii API base URL)
+
+## Messaging Channels/Routes
+
+### Available Channels
+
+| Channel | Description | Use Case |
+|---------|-------------|----------|
+| generic | Promotional messages and messages to phone numbers not on DND | Promotional content only |
+| dnd | Delivers messages to all phone numbers, regardless of DND restriction | Transactional or critical messages (OTPs, alerts) |
+| whatsapp | Sends messages via the WhatsApp messaging channel | WhatsApp messaging |
+| voice | Converts text messages into speech and delivers as automated voice calls | Verification codes, alerts, important notifications |
+
+### Important Channel Notes
+
+- **Generic Route (Non-DND)**
+  - Strictly for promotional messages only
+  - Do NOT use for OTPs or transactional messages
+  - Will not deliver to numbers on Do-Not-Disturb (DND)
+  - Subject to time restrictions in Nigeria for MTN numbers (no delivery between 8PM and 8AM WAT)
+  - Using generic route for OTPs may result in delivery failures or Sender ID being blocked
+  - Time restrictions do NOT apply to transactional messages on DND route
+
+- **DND Route**
+  - Ideal for OTPs and transactional messages
+  - Bypasses DND restrictions
+  - Must be activated on your account (contact Termii support)
+  - Ensures reliable delivery of critical messages
+
+- **Voice Channel**
+  - Converts text to speech and delivers as voice call
+  - For verification codes, add spaces between digits for better text-to-speech interpretation
+
+## API Endpoints
+
+### Send Message
+
+Send a message to a single recipient via SMS, WhatsApp, or Voice call.
+
+**Endpoint:** `POST /api/sms/send`
+
+**Request Headers:**
+```
+Content-Type: application/json
+```
+
+**Request Body Parameters:**
+
+| Parameter | Required | Type | Description |
+|-----------|----------|------|-------------|
+| api_key | Yes | string | Your API key (found on Termii dashboard) |
+| to | Yes | string or array | Destination phone number(s). Must be in international format (e.g., "23490126727"). For multiple numbers, use array format: ["23490555546", "23490126999"]. Maximum 100 phone numbers per request. |
+| from | Yes | string | Sender ID for SMS (Alphanumeric or Device name for WhatsApp). Alphanumeric sender ID length: 3-11 characters (e.g., "CompanyName") |
+| sms | Yes | string | The text message to be delivered |
+| channel | Yes | string | Route through which message is sent. Accepted values: `dnd`, `generic`, `whatsapp`, or `voice` |
+| type | Yes | string | Message format. Supported values: `plain`, `unicode`, `encrypted`, `voice` |
+
+**Message Types:**
+
+- `plain` - Standard text message
+- `unicode` - Unicode-encoded message (for special characters or non-Latin scripts)
+- `encrypted` - Encrypted message (requires Algorithm and Secret key - AES recommended)
+
+**Special Characters Note:**
+- 1 page = 160 characters (standard)
+- Special characters reduce message count from 160 to 70 characters per message
+- Examples of special characters: `; // ^ { } \ [ ~ ] | € ' "`
+
+**Voice Channel Disclaimer:**
+If the message contains a verification code, add spaces between the digits to ensure better interpretation for customers during text-to-speech conversion.
+
+**Example Request (Python):**
+
+```python
+import requests
+
+url = "https://BASE_URL/api/sms/send"
+
+payload = {
+    "to": "2347880234567",
+    "from": "talert",
+    "sms": "Hi there, testing Termii",
+    "type": "plain",
+    "channel": "dnd",
+    "api_key": "Your API Key",
+}
+
+headers = {
+    'Content-Type': 'application/json',
+}
+
+response = requests.request("POST", url, headers=headers, json=payload)
+print(response.text)
+```
+
+**Example Request (Multiple Recipients):**
+
+```python
+payload = {
+    "to": ["23490555546", "23490126999", "2347880234567"],
+    "from": "talert",
+    "sms": "Hi there, testing Termii",
+    "type": "plain",
+    "channel": "dnd",
+    "api_key": "Your API Key",
+}
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+    "code": "ok",
+    "balance": 1047.57,
+    "message_id": "3017544054459083819856413",
+    "message": "Successfully Sent",
+    "user": "Oluwatobiloba Fatunde",
+    "message_id_str": "3017544054459083819856413"
+}
+```
+
+**Response Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| code | string | Response status code ("ok" for success) |
+| balance | float | Remaining account balance |
+| message_id | string | Unique identifier for the sent message |
+| message | string | Status message |
+| user | string | Account/user name |
+| message_id_str | string | Message ID as string |
+
+## Best Practices
+
+1. **Channel Selection:**
+   - Use `dnd` route for OTPs, verification codes, and transactional messages
+   - Use `generic` route only for promotional content
+   - Use `voice` channel for important notifications that require immediate attention
+
+2. **Phone Number Format:**
+   - Always use international format (e.g., 23490126727 for Nigeria)
+   - Include country code without leading plus sign
+
+3. **Sender ID:**
+   - Alphanumeric sender IDs must be 3-11 characters
+   - Must be approved/registered with Termii
+
+4. **Message Content:**
+   - Keep messages concise (160 characters for standard messages)
+   - For voice messages with codes, add spaces between digits
+   - Avoid special characters if possible to maximize character count per page
+
+5. **Error Handling:**
+   - Check HTTP response codes for success/failure
+   - Monitor the `balance` field in responses
+   - Save `message_id` for tracking and debugging
+
+6. **Account Setup:**
+   - Ensure DND route is activated for transactional messages
+   - Contact Termii support if DND route is not available
+
+## HTTP Response Codes
+
+Termii uses HTTP response codes to indicate the success or failure of requests:
+
+- **2xx range** - Indicates success
+- **4xx range** - Indicates an error that failed given the information provided (client error)
+- **5xx range** - Indicates an error from Termii's end (rare, server error)
+
+### HTTP Status Code Summary
+
+| Code | Description |
+|------|-------------|
+| 200 | **OK**: Request was successful |
+| 400 | **Bad Request**: Server cannot or will not process the request due to a client error |
+| 401 | **Unauthorized**: No valid API key provided |
+| 403 | **Forbidden**: The API key doesn't have permissions to perform the request |
+| 404 | **Not Found**: The requested resource doesn't exist |
+| 405 | **Method Not Allowed**: The selected HTTP method is not allowed |
+| 422 | **Unprocessable Entity**: Server understands the content type and syntax is correct, but unable to process the contained instructions |
+| 429 | **Too Many Requests**: User has sent too many requests in a given amount of time |
+| 5xx | **Server Errors**: Something went wrong on Termii's end |
+
+### Common Errors and Troubleshooting
+
+#### Unauthorized (401)
+
+**Issue**: Getting Unauthorized error even with the correct API key?
+
+**Solutions**:
+- Check your API endpoint URL
+- Ensure you're using `https://` instead of `http://`
+- Verify the API key is correctly formatted and copied from the dashboard
+
+#### Your account is not active
+
+**Description**: Account has either been deactivated or disabled by the administrators.
+
+**Solution**: Contact Termii administrator for more information to reactivate your account.
+
+#### You are not set up on this route
+
+**Description**: The particular country route or intended destination is not set up for your account.
+
+**Solution**: Contact your account manager to activate the route for your account.
+
+#### Your device has reached the daily limit
+
+**Description**: The message volume activated on your device has reached the daily message limit.
+
+**Solution**: Wait until the limit resets or contact Termii support to increase your daily limit.
+
+#### Invalid Sender Id
+
+**Description**: Received when the inputted sender ID is not registered or misspelled.
+
+**Solutions**:
+- Confirm your sender ID on the Termii dashboard
+- Verify the sender ID via API
+- Ensure sender ID is exactly as registered (case-sensitive)
+
+#### Device not found
+
+**Description**: Your device is not registered or recognized by the system.
+
+**Solution**: Visit your dashboard to register your device.
+
+#### Insufficient balance
+
+**Description**: Wallet balance is not sufficient to perform the transaction.
+
+**Solutions**:
+- Visit your dashboard to top-up your account
+- Request an invoice from Termii
+- Monitor balance in API responses
+
+#### No active subscription on your device
+
+**Description**: Your device subscription has expired.
+
+**Solution**: Visit your dashboard to renew subscription.
+
+#### Service temporarily unavailable
+
+**Description**: Termii is experiencing a downtime (rare occurrence).
+
+**Solution**: Contact Termii administrator or wait for service restoration.
+
+#### This service is currently not active on your account
+
+**Description**: The service in question is not active on your account.
+
+**Solution**: Contact your account manager to activate the service.
+
+#### Device not active
+
+**Description**: Device connection issue.
+
+**Solutions**:
+- Rescan device barcode to the web server
+- Ensure the device is connected to an active internet connection
+
+### Error Handling Best Practices
+
+1. **Always check HTTP status codes** before processing response body
+2. **Log error responses** with full details for debugging
+3. **Implement retry logic** for 5xx errors (server errors)
+4. **Handle 429 (Too Many Requests)** with exponential backoff
+5. **Monitor account balance** to prevent "Insufficient balance" errors
+6. **Validate sender IDs** before sending messages
+7. **Check the `code` field** in response JSON for additional status information
+
+## Security Notes
+
+- Keep your API key secure and never expose it in client-side code
+- For encrypted messages, use AES algorithm and securely manage secret keys
+- Use HTTPS for all API requests
+
+## Rate Limits and Restrictions
+
+- Maximum 100 phone numbers per request (when using array format for `to` parameter)
+- MTN Nigeria: Generic route messages restricted between 8PM and 8AM WAT
+- DND route messages have no time restrictions
+
