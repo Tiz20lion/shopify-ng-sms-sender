@@ -1,3 +1,30 @@
+<style>
+@media screen and (max-width: 768px) {
+  body {
+    font-size: 14px !important;
+  }
+  h1 {
+    font-size: 1.8em !important;
+  }
+  h2 {
+    font-size: 1.5em !important;
+  }
+  h3 {
+    font-size: 1.3em !important;
+  }
+  p, li {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+  }
+  code {
+    font-size: 12px !important;
+  }
+  pre {
+    font-size: 12px !important;
+  }
+}
+</style>
+
 <div align="center">
 
 #  Shopify NG SMS Sender
