@@ -1,0 +1,15 @@
+api_version = "2024-10"
+
+[[extensions]]
+name = "admin-ui"
+handle = "admin-ui"
+type = "ui_extension"
+uid = "termii-sms-admin-ui"
+
+[[extensions.targeting]]
+target = "admin.settings.render"
+module = "./src/SettingsExtension.jsx"
+
+[extensions.capabilities]
+api_access = true
+
